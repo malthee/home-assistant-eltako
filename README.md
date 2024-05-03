@@ -24,7 +24,7 @@ Elatko devices are exemplarily mentioned. You can find [here](https://www.eltako
   * A5-30-01, A5-30-03 (Digital Input - used for water sensor FSM60B)
   * F6-02-01 ([Rocker switch](https://github.com/grimmpp/home-assistant-eltako/tree/main/docs/rocker_switch/readme.md), FTS14EM)
   * F6-02-02 ([Rocker switch](https://github.com/grimmpp/home-assistant-eltako/tree/main/docs/rocker_switch/readme.md))
-  * F6-10-00 (Window handle, classic switches or contacs via FTS14EM, window and door contacts like FTKE, supported states: open, closed)
+  * F6-10-00 (Window handle, classic switches or contacs via FTS14EM, window and door contacts like FTKE; FFTE-rw, supported states: open, closed)
   * D5-00-01 ([Contact sensor](https://github.com/grimmpp/home-assistant-eltako/tree/main//docs/window_sensor_setup_FTS14EM.md), FTS14EM) incl. signal inverter
 * Sensor
   * A5-04-01 (Temperature and Humidity Sensor)
@@ -40,7 +40,7 @@ Elatko devices are exemplarily mentioned. You can find [here](https://www.eltako
   * A5-12-02 (Automated meter reading - gas, F3Z14D)
   * A5-12-03 (Automated meter reading - water, F3Z14D)
   * A5-13-01 (Weather station, FWG14)
-  * F6-10-00 (Window handle, classic switches or contacs via FTS14EM, window and door contacts like FTKE, supported states: open, closed, tilt)
+  * F6-10-00 (Window handle, classic switches or contacs via FTS14EM, window and door contacts like FTKE; FFTE-rw, supported states: open, closed, tilt)
 * [Light](https://github.com/grimmpp/home-assistant-eltako/tree/main/docs/lights-tutorial/readme.md)
   * A5-38-08 (Dimmable Light: Central command - gateway, FUD14)
   * M5-38-08 (Switchable Light: Eltako relay, FSR14)
