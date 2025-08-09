@@ -1,13 +1,12 @@
 """Voluptuous schemas for the Eltako integration."""
 
-from typing import Final
-
 from abc import ABC
 from typing import ClassVar
 import voluptuous as vol
 
+from numbers import Number, Real
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import ENTITY_CATEGORIES_SCHEMA
+
 
 from eltakobus.eep import *
 
@@ -19,12 +18,6 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.components.cover import (
     DEVICE_CLASSES_SCHEMA as COVER_DEVICE_CLASSES_SCHEMA,
-)
-from homeassistant.components.sensor import (
-    DEVICE_CLASSES_SCHEMA as SENSOR_DEVICE_CLASSES_SCHEMA,
-)
-from homeassistant.components.switch import (
-    DEVICE_CLASSES_SCHEMA as SWITCH_DEVICE_CLASSES_SCHEMA,
 )
 from homeassistant.components.cover import (
     DEVICE_CLASSES_SCHEMA as COVER_DEVICE_CLASSES_SCHEMA,
@@ -41,7 +34,15 @@ from homeassistant.const import (
     CONF_LANGUAGE,
 )
 
-CONF_EEP_SUPPORTED_BINARY_SENSOR = [F6_02_01.eep_string, F6_02_02.eep_string, F6_10_00.eep_string, D5_00_01.eep_string, A5_08_01.eep_string]
+CONF_EEP_SUPPORTED_BINARY_SENSOR = [F6_01_01.eep_string, 
+                                    F6_02_01.eep_string, 
+                                    F6_02_02.eep_string, 
+                                    F6_10_00.eep_string, 
+                                    D5_00_01.eep_string, 
+                                    A5_07_01.eep_string, 
+                                    A5_08_01.eep_string, 
+                                    A5_30_01.eep_string, 
+                                    A5_30_03.eep_string]
 CONF_EEP_SUPPORTED_SENSOR_ROCKER_SWITCH = [F6_02_01.eep_string, F6_02_02.eep_string]
 
 def _get_sender_schema(supported_sender_eep) -> vol.Schema:
@@ -117,7 +118,7 @@ class LightSchema(EltakoPlatformSchema):
     PLATFORM = Platform.LIGHT
 
     CONF_EEP_SUPPORTED = [A5_38_08.eep_string, M5_38_08.eep_string]
-    CONF_SENDER_EEP_SUPPORTED = [A5_38_08.eep_string]
+    CONF_SENDER_EEP_SUPPORTED = [A5_38_08.eep_string, F6_02_01.eep_string, F6_02_02.eep_string]
 
     DEFAULT_NAME = "Light"
 
@@ -137,7 +138,7 @@ class SwitchSchema(EltakoPlatformSchema):
     PLATFORM = Platform.SWITCH
 
     CONF_EEP_SUPPORTED = [M5_38_08.eep_string, F6_02_01.eep_string, F6_02_02.eep_string]
-    CONF_SENDER_EEP_SUPPORTED = [F6_02_01.eep_string, F6_02_02.eep_string]
+    CONF_SENDER_EEP_SUPPORTED = [F6_02_01.eep_string, F6_02_02.eep_string, A5_38_08.eep_string]
 
     DEFAULT_NAME = "Switch"
 
@@ -156,15 +157,21 @@ class SensorSchema(EltakoPlatformSchema):
     """Voluptuous schema for Eltako sensors."""
     PLATFORM = Platform.SENSOR
 
-    CONF_EEP_SUPPORTED = [A5_04_02.eep_string,
+    CONF_EEP_SUPPORTED = [A5_04_01.eep_string,
+                          A5_04_02.eep_string,
+                          A5_04_03.eep_string,
+                          A5_06_01.eep_string,
+                          A5_07_01.eep_string,
+                          A5_08_01.eep_string,
                           A5_09_0C.eep_string,
+                          A5_10_03.eep_string,
                           A5_10_06.eep_string,
                           A5_10_12.eep_string,
                           A5_12_01.eep_string, 
                           A5_12_02.eep_string, 
                           A5_12_03.eep_string, 
-                          A5_13_01.eep_string, 
-                          F6_10_00.eep_string, 
+                          A5_13_01.eep_string,
+                          F6_10_00.eep_string,  
                           ]
 
     DEFAULT_NAME = ""
@@ -203,6 +210,7 @@ class CoverSchema(EltakoPlatformSchema):
                 vol.Optional(CONF_DEVICE_CLASS): COVER_DEVICE_CLASSES_SCHEMA,
                 vol.Optional(CONF_TIME_CLOSES): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
                 vol.Optional(CONF_TIME_OPENS): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
+                vol.Optional(CONF_TIME_TILTS): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
             }
         ),
     )
@@ -260,11 +268,14 @@ class GatewaySchema(EltakoPlatformSchema):
             vol.Required(CONF_BASE_ID): cv.matches_regex(CONF_ID_REGEX),
             vol.Optional(CONF_NAME, default=""): cv.string,
             vol.Optional(CONF_SERIAL_PATH): cv.string,
-            vol.Required(CONF_DEVICES): vol.All(vol.Schema({
+            vol.Optional(CONF_GATEWAY_AUTO_RECONNECT, default=True): cv.boolean,
+            vol.Optional(CONF_GATEWAY_ADDRESS): cv.string,
+            vol.Optional(CONF_GATEWAY_MESSAGE_DELAY, default=0.01): cv.Number,
+            vol.Optional(CONF_GATEWAY_PORT, default=5100): cv.Number,
+            vol.Optional(CONF_DEVICES): vol.All(vol.Schema({
                 **BinarySensorSchema.platform_node(),
                 **LightSchema.platform_node(),
                 **SwitchSchema.platform_node(),
-                **SensorSchema.platform_node(),
                 **SensorSchema.platform_node(),
                 **CoverSchema.platform_node(),
                 **ClimateSchema.platform_node(),

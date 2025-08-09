@@ -36,13 +36,19 @@ CONF_GERNERAL_SETTINGS: Final = "general_settings"
 CONF_SHOW_DEV_ID_IN_DEV_NAME: Final = "show_dev_id_in_dev_name"
 CONF_ENABLE_TEACH_IN_BUTTONS: Final = "enable_teach_in_buttons"
 CONF_FAST_STATUS_CHANGE: Final = "fast_status_change"
-GATEWAY_DEFAULT_NAME: Final = "EnOcean ESP2 Gateway"
+GATEWAY_DEFAULT_NAME: Final = "EnOcean Gateway"
+OLD_GATEWAY_DEFAULT_NAME: Final = "EnOcean ESP2 Gateway"
 CONF_GATEWAY: Final = "gateway"
 CONF_GATEWAY_ID: Final = "gateway_id"
 CONF_GATEWAY_DESCRIPTION: Final = "gateway_description"
 CONF_BASE_ID: Final = "base_id"
 CONF_DEVICE_TYPE: Final = "device_type"
 CONF_SERIAL_PATH: Final = "serial_path"
+CONF_GATEWAY_ADDRESS: Final = "address"
+CONF_GATEWAY_MESSAGE_DELAY: Final = "message_delay"
+
+CONF_GATEWAY_AUTO_RECONNECT: Final = "auto_reconnect"
+CONF_GATEWAY_PORT: Final = "port"
 CONF_CUSTOM_SERIAL_PATH: Final = "custom_serial_path"
 CONF_MAX_TARGET_TEMPERATURE: Final = "max_target_temperature"
 CONF_MIN_TARGET_TEMPERATURE: Final = "min_target_temperature"
@@ -53,6 +59,7 @@ CONF_ID_REGEX: Final = "^([0-9a-fA-F]{2})-([0-9a-fA-F]{2})-([0-9a-fA-F]{2})-([0-
 CONF_METER_TARIFFS: Final = "meter_tariffs"
 CONF_TIME_CLOSES: Final = "time_closes"
 CONF_TIME_OPENS: Final = "time_opens"
+CONF_TIME_TILTS: Final = "time_tilts"
 CONF_INVERT_SIGNAL: Final = "invert_signal"
 CONF_VOC_TYPE_INDEXES: Final = "voc_type_indexes"
 
@@ -76,6 +83,12 @@ class GatewayDeviceType(str, Enum):
     GatewayEltakoFGW14USB = 'fgw14usb'
     GatewayEltakoFAMUSB = 'fam-usb'     # ESP2 transceiver: https://www.eltako.com/en/product/professional-standard-en/three-phase-energy-meters-and-one-phase-energy-meters/fam-usb/
     EnOceanUSB300 = 'enocean-usb300'    # not yet supported
+    EltakoFAM14 = 'fam14'
+    EltakoFGW14USB = 'fgw14usb'
+    EltakoFAMUSB = 'fam-usb'
+    USB300 = 'enocean-usb300'
+    ESP3 = 'esp3-gateway'
+    LAN = 'mgw-lan'
 
     @classmethod
     def find(cls, value):
@@ -86,19 +99,31 @@ class GatewayDeviceType(str, Enum):
 
     @classmethod
     def is_transceiver(cls, dev_type) -> bool:
-        return dev_type in [GatewayDeviceType.GatewayEltakoFAMUSB, GatewayDeviceType.EnOceanUSB300]
+        return dev_type in [GatewayDeviceType.GatewayEltakoFAMUSB, GatewayDeviceType.EnOceanUSB300, GatewayDeviceType.USB300, GatewayDeviceType.ESP3]
 
     @classmethod
     def is_bus_gateway(cls, dev_type) -> bool:
-        return dev_type in [GatewayDeviceType.GatewayEltakoFAM14, GatewayDeviceType.GatewayEltakoFGW14USB]
+        return dev_type in [GatewayDeviceType.GatewayEltakoFAM14, GatewayDeviceType.GatewayEltakoFGW14USB,
+                            GatewayDeviceType.EltakoFAM14, GatewayDeviceType.EltakoFAMUSB, GatewayDeviceType.EltakoFGW14USB]
     
     @classmethod
     def is_esp2_gateway(cls, dev_type) -> bool:
-        return dev_type in [GatewayDeviceType.GatewayEltakoFAM14, GatewayDeviceType.GatewayEltakoFGW14USB, GatewayDeviceType.GatewayEltakoFAMUSB]
+        return dev_type in [GatewayDeviceType.GatewayEltakoFAM14, GatewayDeviceType.GatewayEltakoFGW14USB, GatewayDeviceType.GatewayEltakoFAMUSB, 
+                            GatewayDeviceType.EltakoFAM14, GatewayDeviceType.EltakoFAMUSB, GatewayDeviceType.EltakoFGW14USB]
+    
+    @classmethod
+    def is_lan_gateway(cls, dev_type) -> bool:
+        return dev_type in [GatewayDeviceType.LAN]
 
 BAUD_RATE_DEVICE_TYPE_MAPPING: dict = {
     GatewayDeviceType.GatewayEltakoFAM14: 57600,
     GatewayDeviceType.GatewayEltakoFGW14USB: 57600,
     GatewayDeviceType.GatewayEltakoFAMUSB: 9600,
     GatewayDeviceType.EnOceanUSB300: 57600,
+    GatewayDeviceType.EltakoFAM14: 57600,
+    GatewayDeviceType.EltakoFGW14USB: 57600,
+    GatewayDeviceType.EltakoFAMUSB: 9600,
+    GatewayDeviceType.USB300: 57600,
+    GatewayDeviceType.ESP3: 57600,
+    GatewayDeviceType.LAN: -1,
 }

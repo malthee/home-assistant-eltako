@@ -1,12 +1,10 @@
 """Support for Eltako Temperature Control sources."""
 from __future__ import annotations
 
-from typing import Any
-
 import asyncio
 import time
 
-from eltakobus.util import AddressExpression, b2a
+from eltakobus.util import AddressExpression
 from eltakobus.eep import *
 from eltakobus.message import ESP2Message
 
@@ -17,13 +15,12 @@ from homeassistant.components.climate import (
     ClimateEntityFeature
 )
 from homeassistant import config_entries
-from homeassistant.const import CONF_ID, CONF_NAME, Platform, TEMP_CELSIUS, CONF_TEMPERATURE_UNIT, Platform
+from homeassistant.const import Platform, CONF_TEMPERATURE_UNIT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType
 
-from .gateway import ESP2Gateway
+from .gateway import EnOceanGateway
 from .device import *
 from .const import *
 from .config_helpers import DeviceConf
@@ -35,7 +32,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Eltako Temperature Control platform."""
-    gateway: ESP2Gateway = get_gateway_from_hass(hass, config_entry)
+    gateway: EnOceanGateway = get_gateway_from_hass(hass, config_entry)
     config: ConfigType = get_device_config_for_gateway(hass, config_entry, gateway)
 
     entities: list[EltakoEntity] = []
@@ -83,13 +80,13 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-def validate_ids_of_climate(entities:[EltakoEntity]):
+def validate_ids_of_climate(entities:list[EltakoEntity]):
     for e in entities:
         e.validate_dev_id()
         e.validate_sender_id()
         if hasattr(e, "cooling_sender_id"):
             e.validate_sender_id(e.cooling_sender_id)
-class ClimateController(EltakoEntity, ClimateEntity):
+class ClimateController(EltakoEntity, ClimateEntity, RestoreEntity):
     """Representation of an Eltako heating and cooling actor."""
 
     _update_frequency = 55 # sec
@@ -112,7 +109,7 @@ class ClimateController(EltakoEntity, ClimateEntity):
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
 
 
-    def __init__(self, platform: str, gateway: ESP2Gateway, dev_id: AddressExpression, dev_name: str, dev_eep: EEP, 
+    def __init__(self, platform: str, gateway: EnOceanGateway, dev_id: AddressExpression, dev_name: str, dev_eep: EEP, 
                  sender_id: AddressExpression, sender_eep: EEP, 
                  temp_unit, min_temp: int, max_temp: int, 
                  thermostat: DeviceConf, cooling_switch: DeviceConf, cooling_sender: DeviceConf):
@@ -144,6 +141,38 @@ class ClimateController(EltakoEntity, ClimateEntity):
 
         self._loop = asyncio.get_event_loop()
         self._update_task = asyncio.ensure_future(self._wrapped_update(), loop=self._loop)
+
+
+    def load_value_initially(self, latest_state:State):
+        # LOGGER.debug(f"[climate {self.dev_id}] eneity unique_id: {self.unique_id}")
+        # LOGGER.debug(f"[climate {self.dev_id}] latest state - state: {latest_state.state}")
+        # LOGGER.debug(f"[climate {self.dev_id}] latest state - attributes: {latest_state.attributes}")
+
+        try:
+            self.hvac_modes = []
+            for m_str in latest_state.attributes.get('hvac_modes', []):
+                for m_enum in HVACMode:
+                    if m_str == m_enum.value:
+                        self.hvac_modes.append(m_enum)
+
+            self._attr_current_temperature = latest_state.attributes.get('current_temperature', None)
+            self._attr_target_temperature = latest_state.attributes.get('temperature', None)
+
+            self._attr_hvac_mode = None
+            for m_enum in HVACMode:
+                if latest_state.state == m_enum.value:
+                    self._attr_hvac_mode = m_enum
+                    break
+                
+        except Exception as e:
+            self._attr_hvac_mode = None
+            self._attr_current_temperature = None
+            self._attr_target_temperature = None
+            raise e
+        
+        self.schedule_update_ha_state()
+
+        LOGGER.debug(f"[climate {self.dev_id}] value initially loaded: [state: {self.state}, modes: [{self.hvac_modes}], current temp: {self.current_temperature}, target temp: {self.target_temperature}]")
 
 
     async def _wrapped_update(self, *args) -> None:

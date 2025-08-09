@@ -17,7 +17,7 @@ DEFAULT_GENERAL_SETTINGS = {
 
 class DeviceConf(dict):
     """Object representation of config."""
-    def __init__(self, config: ConfigType, extra_keys:[str]=[]):
+    def __init__(self, config: ConfigType, extra_keys:list[str]=[]):
         # merge everything into dict
         self.update(config)
         
@@ -50,15 +50,14 @@ class DeviceConf(dict):
         for ek in extra_keys:
             if ek in config:
                 setattr(self, ek, config.get(ek))
-        pass
 
-    def get(self, key: str):
-        return super().get(key, None)
+    def get(self, key: str, default = None):
+        return super().get(key, default)
 
-def get_device_conf(config: ConfigType, key: str, extra_keys:[str]=[]) -> DeviceConf:
+def get_device_conf(config: ConfigType, key: str, extra_keys:list[str]=[]) -> DeviceConf:
     if config is not None:
         if key in config.keys():
-            return DeviceConf(config.get(key))
+            return DeviceConf(config.get(key), extra_keys)
     return None
 
 def get_general_settings_from_configuration(hass: HomeAssistant) -> dict:
@@ -119,14 +118,17 @@ def get_device_config(config: dict, id: int) -> dict:
     gateways = config[CONF_GATEWAY]
     for g in gateways:
         if g[CONF_ID] == id:
-            return g[CONF_DEVICES]
+            if CONF_DEVICES in g:
+                return g[CONF_DEVICES]
+            else:
+                return {}
     return None
 
-async def async_get_list_of_gateway_descriptions(hass: HomeAssistant, CONFIG_SCHEMA: dict, get_integration_config=async_integration_yaml_config, filter_out: [str]=[]) -> dict:
+async def async_get_list_of_gateway_descriptions(hass: HomeAssistant, CONFIG_SCHEMA: dict, get_integration_config=async_integration_yaml_config, filter_out: list[str]=[]) -> dict:
     config = await async_get_home_assistant_config(hass, CONFIG_SCHEMA, get_integration_config)
     return get_list_of_gateway_descriptions(config, filter_out)
 
-def get_list_of_gateway_descriptions(config: dict, filter_out: [str]=[]) -> dict:
+def get_list_of_gateway_descriptions(config: dict, filter_out: list[str]=[]) -> dict:
     """Compiles a list of all gateways in config."""
     result = {}
     if CONF_GATEWAY in config:
@@ -149,7 +151,7 @@ def config_check_gateway(config: dict) -> bool:
             g_ids.append(g[CONF_ID])
     
     if len(g_ids) == 0:
-        return False
+        return True
 
     return True
 
@@ -166,7 +168,7 @@ def get_gateway_name(dev_name:str, dev_type:str, dev_id: int, base_id:AddressExp
     return f"{dev_name} - {dev_type} (Id: {dev_id}, BaseId: {format_address(base_id)})"
 
 def format_address(address: AddressExpression, separator:str='-') -> str:
-    return b2a(address[0], '-').upper()
+    return b2a(address[0], separator).upper()
 
 def get_device_name(dev_name: str, dev_id: AddressExpression, general_config: dict) -> str:
     if general_config[CONF_SHOW_DEV_ID_IN_DEV_NAME]:
@@ -200,3 +202,19 @@ def convert_button_pos_from_hex_to_str(pos: int) -> str:
     if pos == 0x50:
         return "RB"
     return None
+
+def convert_button_abbreviation(buttons:list[str]) -> list[str]:
+    result = []
+    for b in buttons:
+        if b.upper() == "LB":
+            result.append("Left Bottom")
+        elif b.upper() == "LT":
+            result.append("Left Top")
+        elif b.upper() == "RB":
+            result.append("Right Bottom")
+        elif b.upper() == "RT":
+            result.append("Right Top")
+    return result
+
+def button_abbreviation_to_str(buttons:list[str]) -> list[str]:
+    return ', '.join(convert_button_abbreviation(buttons))

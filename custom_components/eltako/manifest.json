@@ -1,7 +1,7 @@
 {
   "domain": "eltako",
   "name": "Eltako",
-  "codeowners": ["@bdurrer", "@grimmpp"],
+  "codeowners": ["@grimmpp"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/grimmpp/home-assistant-eltako",
@@ -9,6 +9,6 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/grimmpp/home-assistant-eltako/issues",
   "loggers": ["eltako"],
-  "requirements": ["eltako14bus==0.0.34","enocean==0.60.1", "StrEnum"],
-  "version": "1.2.3" 
+  "requirements": ["eltako14bus==0.0.61", "enocean>=0.60.1", "StrEnum", "esp2-gateway-adapter==0.2.11"],
+  "version": "1.5.8" 
 }

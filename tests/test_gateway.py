@@ -1,12 +1,13 @@
 from unittest import TestCase, mock
-from mocks import *
+from tests.mocks import *
 from eltakobus import *
 from custom_components.eltako.gateway import *
 from custom_components.eltako import config_helpers
 import yaml
 
 # mock update of Home Assistant
-ESP2Gateway._register_device = mock.Mock(return_value=None)
+EnOceanGateway._register_device = mock.Mock(return_value=None)
+EnOceanGateway._init_bus = mock.Mock(return_value=None)
 RS485SerialInterface.__init__ = mock.Mock(return_value=None)
 asyncio.get_event_loop = mock.Mock(return_value=None)
 
@@ -15,7 +16,7 @@ class TestGateway(TestCase):
     def test_gateway_types(self):
         for t in GatewayDeviceType:
             
-            if t in [GatewayDeviceType.EnOceanUSB300, GatewayDeviceType.GatewayEltakoFAMUSB]:
+            if t in [GatewayDeviceType.GatewayEltakoFAMUSB, GatewayDeviceType.EnOceanUSB300, GatewayDeviceType.USB300, GatewayDeviceType.ESP3]:
                 self.assertTrue(GatewayDeviceType.is_transceiver(t))
             else:
                 self.assertFalse(GatewayDeviceType.is_transceiver(t))
@@ -24,17 +25,17 @@ class TestGateway(TestCase):
     def test_gateway_creation(self):
         sub_type = GatewayDeviceType.GatewayEltakoFAM14
         baud_rate = BAUD_RATE_DEVICE_TYPE_MAPPING[sub_type]
-        conf = ConfigEntry(1, DOMAIN, "gateway", {}, None)
-        gw = ESP2Gateway(DEFAULT_GENERAL_SETTINGS, HassMock(), 
-                              dev_id=123, dev_type=sub_type, serial_path="serial_path",  baud_rate=baud_rate, base_id=AddressExpression.parse('FF-AA-00-00'), dev_name="GW", 
+        conf = ConfigEntry(version=1, minor_version=0, domain=DOMAIN, title="gateway", data={}, source=None, options=None, unique_id=None)
+        gw = EnOceanGateway(DEFAULT_GENERAL_SETTINGS, HassMock(), 
+                              dev_id=123, dev_type=sub_type, serial_path="serial_path",  baud_rate=baud_rate, port=None, base_id=AddressExpression.parse('FF-AA-00-00'), dev_name="GW", auto_reconnect=True,
                               config_entry=conf)
         
-        self.assertEquals(gw.identifier, basename(normpath('serial_path')))
-        self.assertEquals(gw.general_settings, DEFAULT_GENERAL_SETTINGS)
-        self.assertEquals(gw.model, "EnOcean ESP2 Gateway - FAM14")
-        self.assertEquals(gw.dev_id, 123)
-        self.assertEquals(gw.dev_type, sub_type)
-        self.assertEquals(gw.dev_name, 'GW - fam14 (Id: 123, BaseId: FF-AA-00-00)')
+        self.assertEqual(gw.identifier, basename(normpath('serial_path')))
+        self.assertEqual(gw.general_settings, DEFAULT_GENERAL_SETTINGS)
+        self.assertEqual(gw.model, "EnOcean Gateway - FAM14")
+        self.assertEqual(gw.dev_id, 123)
+        self.assertEqual(gw.dev_type, sub_type)
+        self.assertEqual(gw.dev_name, 'GW - fam14 (Id: 123, BaseId: FF-AA-00-00)')
 
     config_str = """
 general_settings:
@@ -51,7 +52,7 @@ gateway:
         eep: M5-38-08
         name: "FSR14_4x - 1"
         sender:
-          id: 00-00-B1-01
+          id: 00-00-B0-01
           eep: A5-38-08
 
   - id: 2
@@ -74,16 +75,16 @@ gateway:
         self.assertEqual(list(g_list.values())[1] ,'GW2 - fam-usb (Id: 2, BaseId: FF-BB-00-00)')
 
     def test_get_id_from_name(self):
-      self.assertEquals(1, config_helpers.get_id_from_name('GW1 - fgw14usb (Id: 1, BaseId: FF-AA-00-00)'))
-      self.assertEquals(87126, config_helpers.get_id_from_name('GW1 - fgw14usb (Id: 87126, BaseId: FF-AA-00-00)'))
+      self.assertEqual(1, config_helpers.get_id_from_name('GW1 - fgw14usb (Id: 1, BaseId: FF-AA-00-00)'))
+      self.assertEqual(87126, config_helpers.get_id_from_name('GW1 - fgw14usb (Id: 87126, BaseId: FF-AA-00-00)'))
 
     def test_get_gateway_from_config(self):
         config = yaml.safe_load(self.config_str)
 
         g_id = 99
         g_config = config_helpers.find_gateway_config_by_id(config, g_id)
-        self.assertEquals(g_config, None)
+        self.assertEqual(g_config, None)
 
         for i in range(1,3):
           g_config = config_helpers.find_gateway_config_by_id(config, i)
-          self.assertEquals(g_config[CONF_ID], i)
+          self.assertEqual(g_config[CONF_ID], i)

@@ -1,5 +1,101 @@
 # Changes and Feature List
 
+## Version 1.5.8
+* Fixed dependency incompatibility with HA 2024.9
+
+## Version 1.5.7
+* Tested new devices: FB55EB, FWZ12
+* Added EEP F6-01-01 and tested FMH1W
+
+## Version 1.5.6 Added EEP A5-10-03 for current and target temperature
+* Only for sensors available
+
+## Version 1.5.5 Added message-delay for GWs as config parameter
+* Added argument `message_delay` to config distance of bulk messages being translated in the gateway so that buffer overflows can be prevented.
+
+## Version 1.5.4 Cover motion fixed
+* changed min movement time from 0 to 1 so that covers won't move completely up or down.
+
+## Version 1.5.3 Added auto-reconnect for GWs as config parameter
+* Added argument `auto_reconnect` to disable auto-reconnect for all Gateways
+
+## Version 1.5.2 BugFix for LAN Gateway Connection 
+* Added argument port for LAN Gateway. Default port = 5100
+
+## Version 1.5.1 Added into HACS list
+* Added Eltako Intgration into list of HACS
+
+## Version 1.5 MGW LAN Support
+* Added support for [MGW Gateway](https://www.piotek.de/PioTek-MGW-POE) (ESP3 over LAN)
+
+## Version 1.4.4 
+* Thread sync clean up
+* Lazy loading for ESP3 libs to prevent dependency issues
+
+## Version 1.4.3 Compatibility to HA 2024.5
+* 🐞 Incompatibility with HA 2024.5 fixed. (Cleaned up event loop synchronization)
+
+## Version 1.4.2 Added EEPs A5-30-01 and A5-30-03
+* Added EEPs (A5-30-01 preferred) for digital input which is used in water sensor (FSM60B)
+
+## Version 1.4.1 Support for sending arbitrary messages
+* Added Service for sending arbitrary EnOcean (ESP2) messages. Intended to be used in conjunction with [Home Assistant Automations](https://www.home-assistant.io/getting-started/automation/).
+* 🐞 Fix for TargetTemperatureSensor (EEP: A5-10-06 and A5-10-12)
+* 🐞 Fix for unknown cover positions and intermediate state + unit-tests added.
+* Unit-Tests added and improved for EEP A5-04-01, A5-04-02, A5-10-06, A5-10-12, A5-13-01, and F6-10-00.
+* EEP A5-04-03 added for Eltako FFT60 (temperature and humidity)
+* EEP A5-06-01 added for light sensor (currently twilight and daylight are combined in one illumination sensor/entity)
+* Bug fixes in EEPs (in [eltako14bus library](https://github.com/grimmpp/eltako14bus))
+
+## Version 1.4.0 ESP3 Support (USB300)
+* Docs about gateway usage added.
+* Added EEPs F6-02-01 and F6-02-02 as sender EEP for lights so that regular switch commands can be sent from Home Assistant.
+* &#x26A0; Changed default behavior of switches and lights to 'direct pushbutton top on' and 'left rocker' for sender EEP F6-02-01/-02
+* Logging prettified.
+* Added library for ESP3 (USB300 Support) => [esp2_gateway_adapter](https://github.com/grimmpp/esp2_gateway_adapter)
+* Better support for Teach-In Button
+
+## Version 1.3.8 Fixes and Smaller Improvements
+* Fixed window handle F6-10-00 in binary sensor
+* Added better tests for binary sensors
+* Fixed covers which behaved differently after introducing recovery state feature.
+* Added additional values (battery voltage, illumination, temperature) for A5-08-01 as sensor
+* Occupancy Sensor of A5-08-01 added as binary sensor
+* Improved ESP3 adapter for USB300 support. Sending telegrams works now but actuators are not accepting commands for e.g. lights - EEP: A5-38-08 😥
+* Teach-In buttons for lights, covers, and climate are available.
+* Static 'Event Id' of switches (EEP: F6-02-01 and F6-02-02) is displayed on entity page.
+* Docs about how to use logging added.
+* Updated docs about how to trigger automations with wall-mounted switches.
+
+## Version 1.3.7 Restore Device States after HA Restart
+* Trial to remove import warnings 
+  Reported Issue: https://github.com/grimmpp/home-assistant-eltako/issues/61
+* &#x1F41E; Removed entity_id bug from GatewayConnectionState &#x1F41E; => Requires removing and adding gateway again ❗
+* Added state cache of device entities. When restarting HA entities like temperature sensors will show previous state/value after restart. 
+  Reported Feature: https://github.com/grimmpp/home-assistant-eltako/issues/63
+
+## Version 1.3.6 Dependencies fixed for 1.3.5
+* &#x1F41E; Wrong dependency in manifest &#x1F41E; 
+
+## Version 1.3.5 Prevent Message overflow for FGW14-USB
+* Added info field for which button of a wall-mounted switch was pushed down
+* Added static info filed for device id 
+* Fixes for ESP3 to ESP2 messages converter (Still not stable)
+* Message delay added to eltako14bus so that buffer overflow in FGW14-USB gets prevented. (When sending many messages, messages get lot.)
+
+## Version 1.3.4 Improved FTS14EM and Gateway Support
+*  &#x1F41E; ESP3 Serial Communicator bug fix  &#x1F41E; 
+*  Support for FTS14EM sending switches (EEP: F6-02-01, F6-02-02) and contacts (EEP: D5-00-01) telegram. (There are different FTS14EM versions sending different message types. Depending on that you need to choose the correct EEP)
+*  Added sender_eep A5-38-08 support for swtiches
+*  Filter for EltakoPoll messages inserted so that those messages won't span the whole Home Assistant bus.
+*  Gateway reconnect button added.
+*  Info fields added for Gateway (Id, Base Id, Serialo Port Path, Connected State, Last Received Message Timestamp, Received Message Count)
+
+## Version 1.3.3 Added Temp and Humidity (EEP A5-04-01) and Occupancy Sensor (EEP A5-07-01)
+* Added support for EEP A5-04-01 and A5-07-01
+* Wrapper for ESP3 serial communication added. (It can automatically reconnect as well.) (Experimental Support)
+* Converter for ESP3 to ESP2 messages added
+
 ## Version 1.3.2 Correction of Window Handle Positions (EEP F6-10-00)
 *  &#x1F41E; Fixed Bug &#x1F41E;: Window handle status was not evaluated correctly
 
@@ -62,6 +158,3 @@
 
 ## Version 1.0.0 Baseline
 
-## Backlog
-* Docs for Configuration Schema
-* Extend device discovery for heating and cooling actuators

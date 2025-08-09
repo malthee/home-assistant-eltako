@@ -5,33 +5,41 @@ A gateway is the component which builds the bridge between Home Assistant and th
 ## Summary of Supported Gateways
 What gateway is preferred for what?
 
-### FAM-USB
+### EnOcean Transceiver (USB based like Eltako FAM-USB, USB300, PioTek FAM-USB515, PioTek MGW, ...)
 * Is a good match for controlling actuators mounted on a RS485 bus with FAM14 and especially for decentralized actuators in Home Assistant.
 * It also allows to send teach-in telegrams so that you can teach-in actuators by using the Eltako Integration in Home Assistant.
+* It receives status update telegrams repatedly about each minute of every device on the bus.
 * It cannot receive RS485 bus internal commands. E.g. FTS14EM (wired rocker switches, window contacts, ...) telegrams cannot be received. Those telegrams must be consumed on the bus although status responses of the actuators will be sent into wireless network so that FAM-USB can see the result of the changes.
+* Easy installation (USB-Stick)
+* Reception quality depends on how close is it to all the devices and repeaters. (Wireless connection could be instable.)
 
-### FGW14-USB
+### Wired Gateways (e.g. Eltako FGW14-USB)
 * Has good performance because it filters out polling messages from FAM14 what makes Home Assistant faster.
 * Like FAM14, it can transfer states of actuators mounted on the same RS485 bus to Home Assistant. It can also send telegrams to the actuators to change their states.
 * Has better physical USB connector than FAM14.
 * Cannot read memory of actuators thus it has better security measurements.
 * Cannot control and send telegrams to decentralized actuators. Only to the RS485 bus on which it is mounted.
+* Installation means change to the existing bus in the electric cabinet. (Little electirc knowledge required)
+* Good connection quality.
 
-### FAM14 
-* Can read memory of actuators. You can use it to [auto-generate configuration for Home Assistant](../../eltakodevice_discovery/readme.md).
+### Controller Gateway (Eltako FAM14)
+* Similar to FGW14-USB
+* Can read memory of actuators. You can use it to [auto-generate configuration for Home Assistant](https://github.com/grimmpp/enocean-device-manager).
 * Quite a lot of unnecessary telegrams are sent to Home Assistant. Home Assistant could become slower.
 * In operation it does the same like FGW14-USB.
-* Like FGW14-USB, it can transfer states of actuators mounted on the same RS485 bus to Home Assistant. It can also send telegrams to the actuators to change their states.
+* Like FGW14-USB, it can transfer states of actuators mounted on the same RS485 bus to Home Assistant. It can also send telegrams to the actuators to change their states, excluded decentral actuators.
+* Installation: Most probably already mounted on the bus.
+* Good connection quality.
 
 ### Conclusion
 * Use FAM-USB for operations with Home Assistant. FAM-USB is a must for decentralized actuators. If your setup only have actuators mounted on the RS485 bus FGW14-USB is a good choice. <br />
-* Use FAM14 to [generate Home Assistant configuration](../../eltakodevice_discovery/readme.md).
+* Use FAM14 to [generate Home Assistant configuration](https://github.com/grimmpp/enocean-device-manager).
 
 ### Limitations
-Currently all gateways are limited to control 128 devices. It is wished to support more than one gateway in parallel and then you could operate as many devices as you like. 
+Currently all gateways are limited to control up to 128 devices but you can operate more than one in parallel.
 
 ### Recoomendation
-Use both FGW14-USB to managed bus internal commands and FAM-USB to managed decentralized actuators. Eltako Integration is about to be prepased so that you can bring both areas together in Home Assistant.
+With FAM-USB (e.g. PioTek FAM-USB515) most use cases can be covered and FGW14-USB has the better connection quality but does not support sending command to decentralized devices but you can use both in parallel. 
 
 
 ## Types of gateways
@@ -64,9 +72,11 @@ You can use its usb port to connect it to Home Assistant.
 #### FAM14 BaseId
 FAM14 is setting its baseId automatically and sends telegrams out into the wireless network but only for status telegrams of the actuators.
 This is only relevant for out going communication to devices in wireless network like decentralized actuators. 
-You can find the baseId of FAM14 in PCT14 (Configuration Software).
+You can find the baseId of FAM14 in PCT14 (Configuration Software) or in [EnOcean Device Manager (eo-man)](https://github.com/grimmpp/enocean-device-manager).
 
-#### Configuration 
+#### Configuration (New Way)
+Use [EnOcean Device Manager (eo-man)](https://github.com/grimmpp/enocean-device-manager) to autogenerate the Home Assistant configuration.
+#### Configuration (Old Way)
 1. Specify the type of gateway in the configuration (/homeassistant/configuration.yaml) in Home Assistant.
 2. Enter your devices. I recommend to use a baseId and add the device id so that you don't get confused with all the addresses. 
 
@@ -123,7 +133,7 @@ Same like for FAM14.
 
 ### [**Eltako FAM-USB**](https://www.eltako.com/en/product/professional-standard-en/three-phase-energy-meters-and-one-phase-energy-meters/fam-usb/)
 
-FAM-USB is a usb device which can receive and send ESP2 telegrams. You can use it as gateway in Home Assistant to receive information and to control your actuators. It is connected to the decentralized actuators and to the actuators mounted on a RS485 bus via wireless network.
+FAM-USB is a usb device which can receive and send EnOcean telegrams via ESP2 protocol. You can use it as gateway in Home Assistant to receive information and to control your actuators. It is connected to the decentralized actuators and to the actuators mounted on a RS485 bus via wireless network.
 
 <img src="FAM-USB.jpg" height=100>
 
@@ -137,13 +147,16 @@ FAM-USB is a usb device which can receive and send ESP2 telegrams. You can use i
 
 #### Pro
 * Less traffic overhead than FAM14.
-* Can receive status telegrams from all actuators.
+* Can receive status telegrams from all actuators each minute.
 * Can send telegrams to all actuators incl. teach-in telegrams.
 
 #### Con
-* Cannot receives internal command on the RS485 bu. E.g. telegrams from rocker switches conncted via wires to FTS14EM.
+* Cannot receives internal command on the RS485 bus. E.g. telegrams from rocker switches conncted via wires to FTS14EM.
+* Connection quality could be bad over long distances.
 
-#### Configuration 
+#### Configuration (New Way)
+Use [EnOcean Device Manager (eo-man)](https://github.com/grimmpp/enocean-device-manager) to autogenerate the Home Assistant configuration.
+#### Configuration (Old Way)
 1. Specify the type of gateway in the configuration (/homeassistant/configuration.yaml) in Home Assistant.
 2. Find out  baseId of FAM-USB (start address for sender addresses). Use [DolphinStudio](https://www.enocean.com/de/produkt/dolphinstudio/?ts=1701468463) to read meta data from the chip.
    In this example we use FF-80-80-00 as start address.
@@ -174,10 +187,87 @@ eltako:
 
 ### [**EnOcean GmbH USB300**](https://www.enocean.com/en/product/usb-300/)
 
-FAM-USB is a usb device which can receive and send **ESP3** telegrams. Bahvaior is most probably comparible to FAM-USB.
-
-**CURRENTLY NOT SUPPORTED AS HOME ASSISTANT GATEWAY!!!**
-
-If you want to use it anyway check out the [EnOcean Integration](https://www.home-assistant.io/integrations/enocean/).
+USB300 is a usb device which can receive and send EnOcean telegrams via **ESP3** protocol. ESP3 is made compatible on the feature set of ESP2 by [esp2_gateway_adapter](https://github.com/grimmpp/esp2_gateway_adapter). 
 
 <img src="./USB300.jpg" height=100>
+
+| Specialty | Description |
+| ----- | ----- |
+| Chip Set | [TCM 310](https://www.enocean.com/en/product/tcm-310/?frequency=868&ts=1710856253) |
+| Docs | [Datasheet](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules_928mhz/usb-400j/data-sheet-pdf/USB_300_USB_400J_USB_500U_Data_Sheet.pdf), [User Manual](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules_928mhz/usb-400j/user-manual-pdf/USB_300_USB_400J__USB_500U_User_Manual_06042022.pdf) |
+| Protocol | ESP3 |
+| Baud rate | 57600 |
+| Sender Address Range | TCM310 has 128 address in the range of 0xFF80_0000 to 0xFFFF_FFFE starting at a base address (BaseId).  |
+
+#### Configuration
+Use [EnOcean Device Manager (eo-man)](https://github.com/grimmpp/enocean-device-manager) to autogenerate the Home Assistant configuration.
+
+
+Example Configuration:
+```
+eltako:
+  gateway:
+  - id: 1
+    device_type: enocean-usb300
+    base_id: FF-80-80-00        # baseId of USB300 gateway
+    devices:
+      light:
+      - id: FF-AA-00-01         # baseId of FAM14 (FF-AA-00-00) + internal address
+        eep: M5-38-08
+        name: FSR14_4x - 1
+        sender:
+          id: FF-80-80-01       # baseId of USB300 (FF-80-80-00) + sender id (0-80 HEX/128 DEZ)
+          eep: A5-38-08
+```
+
+### [PioTek EnOcean USB Gateway FAM-USB 515 ](https://www.piotek.de/FAM-USB-515)
+Successor of USB300 with better range and same protocol (ESP3).
+
+<img src="./fam-usb-515.jpg" height=100>
+
+| Specialty | Description |
+| ----- | ----- |
+| Chip Set | [TCM515]([https://www.enocean.com/en/product/tcm-300/?frequency=868), [Datasheet](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules/tcm-300/data-sheet-pdf/TCM_300_TCM_320_DataSheet_May2019.pdf](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules/tcm-515/data-sheet-pdf/TCM_515_Data_Sheet_Nov2020.pdf)), [User Manual]([https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules/tcm-300/user-manual-pdf/TCM300_TCM320_UserManual_Nov2021.pdf), [Firmeware](https://www.enocean.com/en/support/software-tools-kits](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules_928mhz/tcm-515j/user-manual-pdf/TCM-515-User-Manual-1.pdf)) |
+| Protocol | ESP3 |
+| Baud rate | 57600 |
+| Tool | [BCS](https://www.piotek.de/mediafiles/Sonstiges/BSC-480.zip) |
+| Sender Address Range | TCM515 has 128 address in the range of 0xFF80_0000 to 0xFFFF_FFFE starting at a base address (BaseId).  |
+
+### [PioTek EnOcean Multigateway USB/LAN/Wifi](https://www.piotek.de/PioTek-MGW-POE)
+Similar to PioTek FAM-USB515. Is supports ESP3 over TCP for LAN (cable) and Wifi.
+
+<img src="./piotek-mgw-poe.jpg" height=100>
+
+| Specialty | Description |
+| ----- | ----- |
+| Chip Set | [TCM515]([https://www.enocean.com/en/product/tcm-300/?frequency=868), [Datasheet](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules/tcm-300/data-sheet-pdf/TCM_300_TCM_320_DataSheet_May2019.pdf](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules/tcm-515/data-sheet-pdf/TCM_515_Data_Sheet_Nov2020.pdf)), [User Manual]([https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules/tcm-300/user-manual-pdf/TCM300_TCM320_UserManual_Nov2021.pdf), [Firmeware](https://www.enocean.com/en/support/software-tools-kits](https://www.enocean.com/wp-content/uploads/downloads-produkte/en/products/enocean_modules_928mhz/tcm-515j/user-manual-pdf/TCM-515-User-Manual-1.pdf)) |
+| Protocol | ESP3 |
+| Baud rate | 57600 |
+| Tool | [BCS](https://www.piotek.de/mediafiles/Sonstiges/BSC-480.zip) |
+| Sender Address Range | TCM515 has 128 address in the range of 0xFF80_0000 to 0xFFFF_FFFE starting at a base address (BaseId).  |
+
+
+Example Configuration:
+```
+eltako:
+  gateway:
+  - id: 1
+    device_type: mgw-lan
+    base_id: FF-80-80-00        # baseId of LAN gateway
+    address: 192.168.178.15     # address is only required for LAN gateway
+    port: 5100                  # optional (default value 5100). Field only valid for LAN gateway
+    devices:
+      light:
+      - id: FF-AA-00-01         # baseId of FAM14 (FF-AA-00-00) + internal address
+        eep: M5-38-08
+        name: FSR14_4x - 1
+        sender:
+          id: FF-80-80-01       # baseId of USB300 (FF-80-80-00) + sender id (0-80 HEX/128 DEZ)
+          eep: A5-38-08
+```
+
+
+### FTD14 - RS485 bus telegram duplicator
+
+
+Other possible gateway 
