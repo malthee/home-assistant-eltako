@@ -80,16 +80,19 @@ class EltakoCover(EltakoEntity, CoverEntity, RestoreEntity):
         if time_closes is not None and time_opens is not None:
             self._attr_supported_features |= CoverEntityFeature.SET_POSITION
 
+    def load_value_initially(self, latest_state: State):
+        # Start from unknown; do not crash if restore is missing/incomplete.
+        self._attr_is_opening = False
+        self._attr_is_closing = False
+        self._attr_is_closed = None  # undefined until we get a report
+        self._attr_current_cover_position = None
+        self._attr_current_cover_tilt_position = None
 
-    def load_value_initially(self, latest_state:State):
-        # LOGGER.debug(f"[cover {self.dev_id}] latest state: {latest_state.state}")
-        # LOGGER.debug(f"[cover {self.dev_id}] latest state attributes: {latest_state.attributes}")
-        try:
-            self._attr_current_cover_position = latest_state.attributes['current_position']
-            self._attr_current_cover_tilt_position = latest_state.attributes['current_tilt_position']
+        attrs = getattr(latest_state, "attributes", {}) if latest_state else {}
+        self._attr_current_cover_position = attrs.get("current_position")
+        self._attr_current_cover_tilt_position = attrs.get("current_tilt_position")
 
-            #if self._attr_current_cover_tilt_position == 0:
-            #    self._attr_current_cover_tilt_position = 0
+        if latest_state:
             if latest_state.state == STATE_OPEN:
                 self._attr_is_opening = False
                 self._attr_is_closing = False
@@ -110,24 +113,17 @@ class EltakoCover(EltakoEntity, CoverEntity, RestoreEntity):
                 self._attr_is_opening = True
                 self._attr_is_closing = False
                 self._attr_is_closed = False
-            
-        except Exception as e:
-            self._attr_current_cover_position = None
-            self._attr_current_cover_tilt_position = None
-            self._attr_is_opening = None
-            self._attr_is_closing = None
-            self._attr_is_closed = None # means undefined state
-            raise e
-        
-        self.schedule_update_ha_state()
-        LOGGER.debug(f"[cover {self.dev_id}] value initially loaded: [" 
-                     + f"is_opening: {self.is_opening}, "
-                     + f"is_closing: {self.is_closing}, "
-                     + f"is_closed: {self.is_closed}, "
-                     + f"current_possition: {self._attr_current_cover_position}, "
-                     + f"current_tilt_position: {self._attr_current_cover_tilt_position}, "
-                     + f"state: {self.state}]")
 
+        self.schedule_update_ha_state()
+        LOGGER.debug(
+            f"[cover {self.dev_id}] value initially loaded: ["
+            f"is_opening: {self.is_opening}, "
+            f"is_closing: {self.is_closing}, "
+            f"is_closed: {self.is_closed}, "
+            f"current_possition: {self._attr_current_cover_position}, "
+            f"current_tilt_position: {self._attr_current_cover_tilt_position}, "
+            f"state: {self.state}]"
+        )
 
     def open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
